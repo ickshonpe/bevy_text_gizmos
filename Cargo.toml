@@ -1,12 +1,13 @@
 [package]
 name = "bevy_text_gizmos"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 description = "Text gizmo implementation for Bevy using stroke fonts."
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["bevy", "text", "gizmos"]
 categories = ["game-development", "graphics"]
+repository = "https://github.com/bevyengine/bevy"
 
 [dependencies]
 bevy_color = "0.18"
