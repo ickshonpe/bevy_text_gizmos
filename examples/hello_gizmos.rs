@@ -20,9 +20,9 @@ fn setup_camera(mut commands: Commands) {
 
 fn hello_world(mut text_gizmos: Gizmos) {
     text_gizmos.text(
-        Isometry3d::new(Vec3::new(-5.0, 0.0, 0.0), Quat::from_rotation_y(0.5)),
+        Isometry3d::new(Vec3::new(-5.0, 1.0, 0.0), Quat::from_rotation_y(0.6)),
         "Hello, text gizmos",
-        1.5,
+        1.,
         Color::WHITE,
     );
 }
