@@ -2,12 +2,12 @@
 
 use core::ops::Range;
 
-pub const LINE_HEIGHT: f32 = 1.75;
-pub const SIMPLEX_ASCII_START: usize = 32;
-pub const SIMPLEX_ASCII_END: usize = 126;
-pub const SIMPLEX_CAP_HEIGHT: f32 = 21.0;
+pub(crate) const LINE_HEIGHT: f32 = 1.75;
+pub(crate) const SIMPLEX_ASCII_START: usize = 32;
+pub(crate) const SIMPLEX_ASCII_END: usize = 126;
+pub(crate) const SIMPLEX_CAP_HEIGHT: f32 = 21.0;
 
-pub const SIMPLEX_POSITIONS: [[i8; 2]; 1100] = [
+pub(crate) const SIMPLEX_POSITIONS: [[i8; 2]; 1100] = [
     [5, 21],
     [5, 7],
     [5, 2],
@@ -1110,7 +1110,7 @@ pub const SIMPLEX_POSITIONS: [[i8; 2]; 1100] = [
     [21, 12],
 ];
 
-const SIMPLEX_STROKES: [Range<usize>; 188] = [
+pub(crate) const SIMPLEX_STROKES: [Range<usize>; 188] = [
     0..2,
     2..7,
     7..9,
@@ -1301,7 +1301,7 @@ const SIMPLEX_STROKES: [Range<usize>; 188] = [
     1089..1100,
 ];
 
-pub const SIMPLEX_GLYPHS: [(i8, Range<usize>); 95] = [
+pub(crate) const SIMPLEX_GLYPHS: [(i8, Range<usize>); 95] = [
     (16, 0..0),
     (10, 0..2),
     (16, 2..4),

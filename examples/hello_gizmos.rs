@@ -1,8 +1,11 @@
+//! Basic example displaying a message using text gizmos
+
 use bevy::prelude::*;
+use bevy_text_gizmos::prelude::*;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, TextGizmosPlugin))
+        .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup_camera)
         .add_systems(Update, hello_world)
         .run();
@@ -16,8 +19,10 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn hello_world(mut text_gizmos: Gizmos) {
-    let position = Vec3::new(-5.0, 0.0, 0.0);
-    let rotation = Quat::from_rotation_y(0.5);
-    let isometry = Isometry3d::new(position, rotation);
-    text_gizmos.text_3d(isometry, "Hello, text gizmos", 2.0, Color::WHITE);
+    text_gizmos.text(
+        Isometry3d::new(Vec3::new(-5.0, 0.0, 0.0), Quat::from_rotation_y(0.5)),
+        "Hello, text gizmos",
+        1.5,
+        Color::WHITE,
+    );
 }
