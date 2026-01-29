@@ -39,7 +39,8 @@ fn setup(mut commands: Commands, mut gizmo_config_store: ResMut<GizmoConfigStore
 
     let (config, _) = gizmo_config_store.config_mut::<DefaultGizmoConfigGroup>();
 
-    config.line.width = 1.;
+    config.line.width = 2.;
+    config.line.joints = GizmoLineJoint::Round(10);
 }
 
 fn draw_labels(mut text_gizmos: Gizmos, diagnostic: Res<DiagnosticsStore>) {
