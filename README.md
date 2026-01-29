@@ -19,3 +19,25 @@ fn system(mut gizmos: Gizmos) {
     gizmos.text(Isometry3d::IDENTITY, "text gizmo", 25.0, Color::WHITE);
 }
 ```
+
+## Examples
+
+```
+cargo run --example hello_gizmos
+```
+
+![/screenshots/hello_text_gizmos](/screenshots/hello_text_gizmos.png)
+
+```
+cargo run --example stress_text
+```
+
+![/screenshots/example.png](/screenshots/example.png)
+
+```
+cargo run --example all_glyphs
+```
+
+![/screenshots/all_glyphs.png](/screenshots/all_glyphs.png)
+
+
