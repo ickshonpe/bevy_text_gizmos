@@ -6,7 +6,7 @@ Text gizmo implementation for Bevy using stroke fonts.
 
 Add the depedency to the dependencies section of your project's `cargo.toml`:
 ```
-bevy_text_gizmos = "0.1"
+bevy_text_gizmos = "0.2"
 ```
 
 Then just import the `TextGizmos` trait: 
@@ -16,7 +16,7 @@ use bevy::prelude::*;
 use bevy_text_gizmos::TextGizmos;
 
 fn system(mut gizmos: Gizmos) {    
-    gizmos.text(Isometry3d::IDENTITY, "text gizmo", 25.0, Color::WHITE);
+    gizmos.text(Isometry3d::IDENTITY, "text gizmo", 25.0, Vec2::ZERO, Color::WHITE);
 }
 ```
 
