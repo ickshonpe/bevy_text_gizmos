@@ -1,7 +1,10 @@
 use bevy_color::Color;
 use bevy_gizmos::config::GizmoConfigGroup;
 use bevy_gizmos::gizmos::GizmoBuffer;
-use bevy_math::prelude::{Isometry2d, Isometry3d, Vec2, Vec3};
+use bevy_math::{
+    prelude::{Isometry2d, Isometry3d, Vec2, Vec3},
+    vec2,
+};
 use font::*;
 
 mod font;
@@ -18,6 +21,7 @@ pub trait TextGizmos {
     /// - `isometry`: defines the translation and rotation of the text.
     /// - `text`: the text to be drawn.
     /// - `size`: the size of the text in pixels.
+    /// - `anchor`: anchor point relative to the center of the text.
     /// - `color`: the color of the text.
     ///
     /// # Example
@@ -36,6 +40,7 @@ pub trait TextGizmos {
         isometry: impl Into<Isometry3d>,
         text: &str,
         size: f32,
+        anchor: Vec2,
         color: impl Into<Color>,
     );
 
@@ -46,6 +51,7 @@ pub trait TextGizmos {
     /// - `isometry`: defines the translation and rotation of the text.
     /// - `text`: the text to be drawn.
     /// - `size`: the size of the text in pixels.
+    /// - `anchor`: anchor point relative to the center of the text.
     /// - `color`: the color of the text.
     ///
     /// # Example
@@ -64,6 +70,7 @@ pub trait TextGizmos {
         isometry: impl Into<Isometry2d>,
         text: &str,
         size: f32,
+        anchor: Vec2,
         color: impl Into<Color>,
     );
 }
@@ -78,16 +85,45 @@ where
         isometry: impl Into<Isometry3d>,
         text: &str,
         size: f32,
+        anchor: Vec2,
         color: impl Into<Color>,
     ) {
-        let isometry = isometry.into();
         let color = color.into();
         let scale = size / SIMPLEX_CAP_HEIGHT;
-        let line_height = LINE_HEIGHT * size;
+        let band = (SIMPLEX_CAP_HEIGHT + SIMPLEX_DESCENDER_DEPTH) * scale;
+        let line_height = LINE_HEIGHT * band;
+        let margin_top = 0.5 * (line_height - band);
         let space_advance = SIMPLEX_GLYPHS[0].0 as f32 * scale;
 
+        let mut layout_size = vec2(0., line_height);
+
+        let mut w = 0.;
+        for c in text.chars() {
+            if c == '\n' {
+                layout_size.x = layout_size.x.max(w);
+                w = 0.;
+                layout_size.y += line_height;
+                continue;
+            }
+
+            let code_point = c as usize;
+            if !(SIMPLEX_ASCII_START..=SIMPLEX_ASCII_END).contains(&code_point) {
+                w += space_advance;
+                continue;
+            }
+
+            let glyph = &SIMPLEX_GLYPHS[code_point - SIMPLEX_ASCII_START];
+            w += glyph.0 as f32 * scale;
+        }
+
+        layout_size.x = layout_size.x.max(w);
+        let mut isometry = isometry.into();
+
+        isometry.translation.x += layout_size.x * (-anchor.x - 0.5);
+        isometry.translation.y += layout_size.y * (-anchor.y + 0.5);
+
         let mut rx = 0.0;
-        let mut ry = 0.0;
+        let mut ry = -margin_top;
 
         for c in text.chars() {
             if c == '\n' {
@@ -133,16 +169,45 @@ where
         isometry: impl Into<Isometry2d>,
         text: &str,
         size: f32,
+        anchor: Vec2,
         color: impl Into<Color>,
     ) {
-        let isometry = isometry.into();
         let color = color.into();
         let scale = size / SIMPLEX_CAP_HEIGHT;
-        let line_height = LINE_HEIGHT * size;
+        let band = (SIMPLEX_CAP_HEIGHT + SIMPLEX_DESCENDER_DEPTH) * scale;
+        let line_height = LINE_HEIGHT * band;
+        let margin = line_height - band;
         let space_advance = SIMPLEX_GLYPHS[0].0 as f32 * scale;
 
+        let mut layout_size = vec2(0., line_height);
+
+        let mut w = 0.;
+        for c in text.chars() {
+            if c == '\n' {
+                layout_size.x = layout_size.x.max(w);
+                w = 0.;
+                layout_size.y += line_height;
+                continue;
+            }
+
+            let code_point = c as usize;
+            if !(SIMPLEX_ASCII_START..=SIMPLEX_ASCII_END).contains(&code_point) {
+                w += space_advance;
+                continue;
+            }
+
+            let glyph = &SIMPLEX_GLYPHS[code_point - SIMPLEX_ASCII_START];
+            w += glyph.0 as f32 * scale;
+        }
+
+        layout_size.x = layout_size.x.max(w);
+        let mut isometry: Isometry2d = isometry.into();
+
+        isometry.translation.x += layout_size.x * (-anchor.x - 0.5);
+        isometry.translation.y += layout_size.y * (-anchor.y + 0.5);
+
         let mut rx = 0.0;
-        let mut ry = 0.0;
+        let mut ry = -margin;
 
         for c in text.chars() {
             if c == '\n' {

@@ -59,6 +59,7 @@ fn draw_labels(mut text_gizmos: Gizmos, diagnostic: Res<DiagnosticsStore>) {
             },
             &format!("label {i}"),
             25.,
+            vec2(-5., 5.),
             color,
         );
     }
@@ -71,6 +72,7 @@ fn draw_labels(mut text_gizmos: Gizmos, diagnostic: Res<DiagnosticsStore>) {
             Isometry2d::from_translation(pos),
             &format!("fps: {:.1}", fps_smoothed),
             25.,
+            vec2(-5., 5.),
             Color::WHITE,
         );
     }
@@ -79,6 +81,7 @@ fn draw_labels(mut text_gizmos: Gizmos, diagnostic: Res<DiagnosticsStore>) {
         Isometry2d::from_translation(Vec2::new(-200., 500.)),
         "lxgh",
         150.,
+        vec2(-5., 5.),
         Color::WHITE,
     );
 }
@@ -98,6 +101,7 @@ fn draw_all_glyphs(mut text_gizmos: Gizmos) {
         Isometry2d::from_xy(500., START_Y),
         ALL_GLYPHS,
         30.0,
+        vec2(-5., 5.),
         Color::WHITE,
     );
 }

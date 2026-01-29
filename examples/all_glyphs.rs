@@ -27,9 +27,10 @@ fn setup_camera(mut commands: Commands) {
 
 fn draw_all_glyphs(mut text_gizmos: Gizmos) {
     text_gizmos.text_2d(
-        Isometry2d::from_xy(-200., 200.),
+        Isometry2d::IDENTITY,
         ALL_GLYPHS,
         30.0,
+        Vec2::ZERO,
         Color::WHITE,
     );
 }
