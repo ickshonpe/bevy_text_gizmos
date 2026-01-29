@@ -1,0 +1,18 @@
+[package]
+name = "bevy_text_gizmos"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bevy_app = "0.18"
+bevy_asset = "0.18"
+bevy_color = "0.18"
+bevy_ecs = "0.18"
+bevy_math = "0.18"
+bevy_gizmos = "0.18"
+bevy_text = { version = "0.18", features = ["default_font"] }
+cosmic-text = "0.16"
+smol_str = "0.2"
+
+[dev-dependencies]
+bevy = "0.18"
