@@ -1,4 +1,4 @@
-//! Example demonstrating text anchors.
+//! Example demonstrating how to use text gizmos with anchors.
 
 use bevy::color::palettes::css::{BLUE, GREEN, ORANGE, RED, YELLOW};
 use bevy::prelude::*;
@@ -16,21 +16,29 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
-fn anchors(mut text_gizmos: Gizmos) {
-    for (pos, label, anchor, color) in [
-        (vec2(-350.0, 0.0), "left", vec2(-0.5, 0.0), RED),
-        (vec2(350.0, 0.0), "right", vec2(0.5, 0.0), ORANGE),
-        (vec2(0.0, 0.0), "center", Vec2::ZERO, YELLOW),
-        (vec2(0.0, 220.0), "top", vec2(0.0, 0.5), GREEN),
-        (vec2(0.0, -220.0), "bottom", vec2(0.0, -0.5), BLUE),
+fn anchors(mut text_gizmos: Gizmos, time: Res<Time>) {
+    let t = time.elapsed_secs();
+    for (label, anchor, color) in [
+        ("left", vec2(-0.5, 0.0), RED),
+        ("right", vec2(0.5, 0.0), ORANGE),
+        ("center", Vec2::ZERO, YELLOW),
+        ("top", vec2(0.0, 0.5), GREEN),
+        ("bottom", vec2(0.0, -0.5), BLUE),
     ] {
+        let position = Vec2::splat(350.0) * anchor;
         text_gizmos.text_2d(
-            Isometry2d::from_translation(pos),
+            Isometry2d::from_translation(position),
             "+",
             12.,
             Vec2::ZERO,
             Color::WHITE,
         );
-        text_gizmos.text_2d(Isometry2d::from_translation(pos), label, 25., anchor, color);
+        text_gizmos.text_2d(
+            Isometry2d::new(position, Rot2::radians(t)),
+            label,
+            25.,
+            anchor,
+            color,
+        );
     }
 }
