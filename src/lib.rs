@@ -2,15 +2,154 @@ use bevy_color::Color;
 use bevy_gizmos::config::GizmoConfigGroup;
 use bevy_gizmos::gizmos::GizmoBuffer;
 use bevy_math::{
-    prelude::{Isometry2d, Isometry3d, Vec2, Vec3},
+    prelude::{Isometry2d, Isometry3d, Vec2},
     vec2,
 };
+use core::ops::Range;
 use font::*;
-
 mod font;
 
 pub mod prelude {
     pub use crate::TextGizmos;
+}
+
+/// A stroke font
+pub struct StrokeFont<'a> {
+    /// Baseline-to-baseline line height ratio.
+    pub line_height: f32,
+    /// Inclusive ASCII range covered by `glyphs`.
+    pub ascii_range: Range<u8>,
+    /// Full glyph height (cap + descender) in font units.
+    pub height: f32,
+    /// Cap height in font units.
+    pub cap_height: f32,
+    /// Advance used for unsupported glyphs.
+    pub advance: i8,
+    /// Raw glyph point positions.
+    pub positions: &'a [[i8; 2]],
+    /// Stroke ranges into `positions`.
+    pub strokes: &'a [Range<usize>],
+    /// Glyph advances and stroke ranges, indexed by ASCII code point.
+    pub glyphs: &'a [(i8, Range<usize>)],
+}
+
+impl<'a> StrokeFont<'a> {
+    /// Get the advance for the glyph corresponding to this char.
+    /// Returns `self.advance` if there is no corresponding glyph.
+    pub fn layout(&'a self, text: &'a str, font_size: f32) -> StrokeTextLayout<'a> {
+        let scale = font_size / SIMPLEX_CAP_HEIGHT;
+        let glyph_height = SIMPLEX_HEIGHT * scale;
+        let line_height = LINE_HEIGHT * glyph_height;
+        let margin_top = line_height - glyph_height;
+        let space_advance = SIMPLEX_GLYPHS[0].0 as f32 * scale;
+        StrokeTextLayout {
+            font: self,
+            scale,
+            line_height,
+            margin_top,
+            space_advance,
+            text,
+        }
+    }
+}
+
+/// Stroke text layout
+pub struct StrokeTextLayout<'a> {
+    /// The unscaled font
+    font: &'a StrokeFont<'a>,
+    /// The text
+    text: &'a str,
+    /// Scale applied to the raw glyph positions.
+    scale: f32,
+    /// Height of each line of text.
+    line_height: f32,
+    /// Space between top of line and cap height.
+    margin_top: f32,
+    /// Width of a space.
+    space_advance: f32,
+}
+
+impl<'a> StrokeTextLayout<'a> {
+    /// Computes the width and height of a text layout with this font and
+    /// the given text.
+    ///
+    /// Returns the layout size in pixels.
+    pub fn measure(&self) -> Vec2 {
+        let mut layout_size = vec2(0., self.line_height);
+
+        let mut line_width = 0.;
+        for c in self.text.chars() {
+            if c == '\n' {
+                layout_size.x = layout_size.x.max(line_width);
+                line_width = 0.;
+                layout_size.y += self.line_height;
+                continue;
+            }
+
+            line_width += u8::try_from(c)
+                .ok()
+                .filter(|c| self.font.ascii_range.contains(c))
+                .map(|c| self.font.glyphs[(c - self.font.ascii_range.start) as usize].0)
+                .unwrap_or(self.font.advance) as f32
+                * self.scale;
+        }
+
+        layout_size.x = layout_size.x.max(line_width);
+        layout_size
+    }
+
+    /// Returns an iterator over the font strokes for this text layout,
+    /// grouped into polylines of `Vec2` points.
+    pub fn render(&'a self) -> impl Iterator<Item = impl Iterator<Item = Vec2>> + 'a {
+        let mut chars = self.text.chars();
+        let mut x = 0.0;
+        let mut y = -self.margin_top;
+        let mut current_strokes: Range<usize> = 0..0;
+        let mut current_x = 0.0;
+
+        core::iter::from_fn(move || {
+            loop {
+                if !current_strokes.is_empty() {
+                    for stroke_index in current_strokes.by_ref() {
+                        let stroke = self.font.strokes[stroke_index].clone();
+                        if stroke.len() < 2 {
+                            continue;
+                        }
+
+                        return Some(stroke.map(move |index| {
+                            let [p, q] = self.font.positions[index];
+                            Vec2::new(
+                                current_x + self.scale * p as f32,
+                                y - self.scale * (self.font.cap_height - q as f32),
+                            )
+                        }));
+                    }
+                }
+
+                let c = chars.next()?;
+                if c == '\n' {
+                    x = 0.0;
+                    y -= self.line_height;
+                    continue;
+                }
+
+                let Some(code_point) = u8::try_from(c)
+                    .ok()
+                    .filter(|c| self.font.ascii_range.contains(c))
+                else {
+                    x += self.space_advance;
+                    continue;
+                };
+
+                let (advance, strokes) =
+                    self.font.glyphs[(code_point - self.font.ascii_range.start) as usize].clone();
+                current_strokes = strokes;
+                current_x = x;
+
+                x += advance as f32 * self.scale;
+            }
+        })
+    }
 }
 
 pub trait TextGizmos {
@@ -53,18 +192,6 @@ pub trait TextGizmos {
     /// - `size`: the size of the text in pixels.
     /// - `anchor`: anchor point relative to the center of the text.
     /// - `color`: the color of the text.
-    ///
-    /// # Example
-    /// ```
-    /// # use bevy_gizmos::prelude::*;
-    /// # use bevy_math::prelude::*;
-    /// # use bevy_color::Color;
-    /// # use bevy_text_gizmos::TextGizmos;
-    /// fn system(mut gizmos: Gizmos) {
-    ///     gizmos.text_2d(Isometry2d::IDENTITY, "2D text gizmo", 25., Color::WHITE);
-    /// }
-    /// # bevy_ecs::system::assert_is_system(system);
-    /// ```
     fn text_2d(
         &mut self,
         isometry: impl Into<Isometry2d>,
@@ -84,83 +211,19 @@ where
         &mut self,
         isometry: impl Into<Isometry3d>,
         text: &str,
-        size: f32,
+        font_size: f32,
         anchor: Vec2,
         color: impl Into<Color>,
     ) {
+        let isometry: Isometry3d = isometry.into();
         let color = color.into();
-        let scale = size / SIMPLEX_CAP_HEIGHT;
-        let band = (SIMPLEX_CAP_HEIGHT + SIMPLEX_DESCENDER_DEPTH) * scale;
-        let line_height = LINE_HEIGHT * band;
-        let margin_top = 0.5 * (line_height - band);
-        let space_advance = SIMPLEX_GLYPHS[0].0 as f32 * scale;
-
-        let mut layout_size = vec2(0., line_height);
-
-        let mut w = 0.;
-        for c in text.chars() {
-            if c == '\n' {
-                layout_size.x = layout_size.x.max(w);
-                w = 0.;
-                layout_size.y += line_height;
-                continue;
-            }
-
-            let code_point = c as usize;
-            if !(SIMPLEX_ASCII_START..=SIMPLEX_ASCII_END).contains(&code_point) {
-                w += space_advance;
-                continue;
-            }
-
-            let glyph = &SIMPLEX_GLYPHS[code_point - SIMPLEX_ASCII_START];
-            w += glyph.0 as f32 * scale;
-        }
-
-        layout_size.x = layout_size.x.max(w);
-        let mut isometry = isometry.into();
-
-        isometry.translation.x += layout_size.x * (-anchor.x - 0.5);
-        isometry.translation.y += layout_size.y * (-anchor.y + 0.5);
-
-        let mut rx = 0.0;
-        let mut ry = -margin_top;
-
-        for c in text.chars() {
-            if c == '\n' {
-                rx = 0.0;
-                ry -= line_height;
-                continue;
-            }
-
-            let code_point = c as usize;
-            if !(SIMPLEX_ASCII_START..=SIMPLEX_ASCII_END).contains(&code_point) {
-                rx += space_advance;
-                continue;
-            }
-
-            let glyph = &SIMPLEX_GLYPHS[code_point - SIMPLEX_ASCII_START];
-            let advance = glyph.0 as f32 * scale;
-
-            for stroke_index in glyph.1.clone() {
-                let stroke = SIMPLEX_STROKES[stroke_index].clone();
-                if stroke.len() < 2 {
-                    continue;
-                }
-
-                self.linestrip(
-                    SIMPLEX_POSITIONS[stroke].iter().map(|&[x, y]| {
-                        isometry
-                            * Vec3::new(
-                                rx + scale * x as f32,
-                                ry - scale * (SIMPLEX_CAP_HEIGHT - y as f32),
-                                0.0,
-                            )
-                    }),
-                    color,
-                );
-            }
-
-            rx += advance;
+        let layout = SIMPLEX_STROKE_FONT.layout(text, font_size);
+        let layout_anchor = layout.measure() * vec2(-0.5, 0.5) - anchor;
+        for points in layout.render() {
+            self.linestrip(
+                points.map(|point| isometry * (layout_anchor + point).extend(0.)),
+                color,
+            );
         }
     }
 
@@ -168,82 +231,19 @@ where
         &mut self,
         isometry: impl Into<Isometry2d>,
         text: &str,
-        size: f32,
+        font_size: f32,
         anchor: Vec2,
         color: impl Into<Color>,
     ) {
+        let isometry: Isometry2d = isometry.into();
         let color = color.into();
-        let scale = size / SIMPLEX_CAP_HEIGHT;
-        let band = (SIMPLEX_CAP_HEIGHT + SIMPLEX_DESCENDER_DEPTH) * scale;
-        let line_height = LINE_HEIGHT * band;
-        let margin = line_height - band;
-        let space_advance = SIMPLEX_GLYPHS[0].0 as f32 * scale;
-
-        let mut layout_size = vec2(0., line_height);
-
-        let mut w = 0.;
-        for c in text.chars() {
-            if c == '\n' {
-                layout_size.x = layout_size.x.max(w);
-                w = 0.;
-                layout_size.y += line_height;
-                continue;
-            }
-
-            let code_point = c as usize;
-            if !(SIMPLEX_ASCII_START..=SIMPLEX_ASCII_END).contains(&code_point) {
-                w += space_advance;
-                continue;
-            }
-
-            let glyph = &SIMPLEX_GLYPHS[code_point - SIMPLEX_ASCII_START];
-            w += glyph.0 as f32 * scale;
-        }
-
-        layout_size.x = layout_size.x.max(w);
-        let mut isometry: Isometry2d = isometry.into();
-
-        isometry.translation.x += layout_size.x * (-anchor.x - 0.5);
-        isometry.translation.y += layout_size.y * (-anchor.y + 0.5);
-
-        let mut rx = 0.0;
-        let mut ry = -margin;
-
-        for c in text.chars() {
-            if c == '\n' {
-                rx = 0.0;
-                ry -= line_height;
-                continue;
-            }
-
-            let code_point = c as usize;
-            if !(SIMPLEX_ASCII_START..=SIMPLEX_ASCII_END).contains(&code_point) {
-                rx += space_advance;
-                continue;
-            }
-
-            let glyph = &SIMPLEX_GLYPHS[code_point - SIMPLEX_ASCII_START];
-            let advance = glyph.0 as f32 * scale;
-
-            for stroke_index in glyph.1.clone() {
-                let stroke = SIMPLEX_STROKES[stroke_index].clone();
-                if stroke.len() < 2 {
-                    continue;
-                }
-
-                self.linestrip_2d(
-                    SIMPLEX_POSITIONS[stroke].iter().map(|&[x, y]| {
-                        isometry
-                            * Vec2::new(
-                                rx + scale * x as f32,
-                                ry - scale * (SIMPLEX_CAP_HEIGHT - y as f32),
-                            )
-                    }),
-                    color,
-                );
-            }
-
-            rx += advance;
+        let layout = SIMPLEX_STROKE_FONT.layout(text, font_size);
+        let layout_anchor = layout.measure() * (vec2(-0.5, 0.5) - anchor);
+        for points in layout.render() {
+            self.linestrip_2d(
+                points.map(|point| isometry * (layout_anchor + point)),
+                color,
+            );
         }
     }
 }
