@@ -192,18 +192,6 @@ pub trait TextGizmos {
     /// - `size`: the size of the text in pixels.
     /// - `anchor`: anchor point relative to the center of the text.
     /// - `color`: the color of the text.
-    ///
-    /// # Example
-    /// ```
-    /// # use bevy_gizmos::prelude::*;
-    /// # use bevy_math::prelude::*;
-    /// # use bevy_color::Color;
-    /// # use bevy_text_gizmos::TextGizmos;
-    /// fn system(mut gizmos: Gizmos) {
-    ///     gizmos.text_2d(Isometry2d::IDENTITY, "2D text gizmo", 25., Color::WHITE);
-    /// }
-    /// # bevy_ecs::system::assert_is_system(system);
-    /// ```
     fn text_2d(
         &mut self,
         isometry: impl Into<Isometry2d>,
@@ -219,28 +207,6 @@ where
     Config: GizmoConfigGroup,
     Clear: 'static + Send + Sync,
 {
-    /// Draw text using a stroke font with the given isometry applied.
-    ///
-    /// Only ASCII characters in the range 32–126 are supported.
-    ///
-    /// # Arguments
-    ///
-    /// - `isometry`: defines the translation and rotation of the text.
-    /// - `text`: the text to be drawn.
-    /// - `size`: the size of the text in pixels.
-    /// - `anchor`: anchor point relative to the center of the text.
-    /// - `color`: the color of the text.
-    ///
-    /// # Example
-    /// ```
-    /// # use bevy_gizmos::prelude::*;
-    /// # use bevy_math::prelude::*;
-    /// # use bevy_color::Color;
-    /// fn system(mut gizmos: Gizmos) {
-    ///     gizmos.text(Isometry3d::IDENTITY, "text gizmo", 25., Vec2::ZERO, Color::WHITE);
-    /// }
-    /// # bevy_ecs::system::assert_is_system(system);
-    /// ```
     fn text(
         &mut self,
         isometry: impl Into<Isometry3d>,
@@ -261,28 +227,6 @@ where
         }
     }
 
-    /// Draw text using a stroke font in 2d with the given isometry applied.
-    ///
-    /// Only ASCII characters in the range 32–126 are supported.
-    ///
-    /// # Arguments
-    ///
-    /// - `isometry`: defines the translation and rotation of the text.
-    /// - `text`: the text to be drawn.
-    /// - `size`: the size of the text.
-    /// - `anchor`: anchor point relative to the center of the text.
-    /// - `color`: the color of the text.
-    ///
-    /// # Example
-    /// ```
-    /// # use bevy_gizmos::prelude::*;
-    /// # use bevy_math::prelude::*;
-    /// # use bevy_color::Color;
-    /// fn system(mut gizmos: Gizmos) {
-    ///     gizmos.text_2d(Isometry2d::IDENTITY, "2D text gizmo", 25., Vec2::ZERO, Color::WHITE);
-    /// }
-    /// # bevy_ecs::system::assert_is_system(system);
-    /// ```
     fn text_2d(
         &mut self,
         isometry: impl Into<Isometry2d>,
