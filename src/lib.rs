@@ -162,18 +162,6 @@ pub trait TextGizmos {
     /// - `size`: the size of the text in pixels.
     /// - `anchor`: anchor point relative to the center of the text.
     /// - `color`: the color of the text.
-    ///
-    /// # Example
-    /// ```
-    /// # use bevy_gizmos::prelude::*;
-    /// # use bevy_math::prelude::*;
-    /// # use bevy_color::Color;
-    /// # use bevy_text_gizmos::TextGizmos;
-    /// fn system(mut gizmos: Gizmos) {
-    ///     gizmos.text_3d(Isometry3d::IDENTITY, "3D text gizmo", 25., Color::WHITE);
-    /// }
-    /// # bevy_ecs::system::assert_is_system(system);
-    /// ```
     fn text(
         &mut self,
         isometry: impl Into<Isometry3d>,
